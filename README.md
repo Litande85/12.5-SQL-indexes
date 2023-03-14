@@ -2,6 +2,7 @@
 
 - [Ответ к Заданию 1](#1)
 - [Ответ к Заданию 2](#2)
+- [Ответ к Заданию 2 - после доработки](#2-1)
 - [Ответ к Заданию 3* - отсутствует](#3)
 
 ---
@@ -124,6 +125,106 @@ EXPLAIN ANALYZE
 *Результат: actual time=32.025..32.101 rows=391, 1 row in set (0.04 sec)*
 
 
+### *<a name = "2-1"> Ответ к Заданию 2 - после доработки</a>*
+
+Запрос доработки: По поводу 2 задания, подумайте, какой еще индекс можно создать, чтобы ускорить запрос (обратите внимание на условие where). Приложите скрин explain analyz вашего преобразованного запроса, где будет видно, что mysql использует созданный вами индекс (возможно, придется переписать само условие where).
+
+**Вариант 1 без индексов**
+
+```sql
+select distinct concat(c.last_name, ' ', c.first_name), sum(p.amount)
+    from customer c
+    INNER JOIN
+      (select customer_id, amount 
+       from payment
+       where  date(payment_date) = '2005-07-30') p 
+    ON c.customer_id = p.customer_id
+    GROUP BY concat(c.last_name, ' ', c.first_name);
+```
+![v1_noindex](img/Screenshot_2023-03-14_23-55-36.png)
+
+
+**Вариант 2 без индексов**
+
+```sql
+select distinct concat(c.last_name, ' ', c.first_name), sum(p.amount)
+    from customer c
+    INNER JOIN
+      (select customer_id, amount 
+       from payment
+       where  payment_date like '2005-07-30%') p 
+    ON c.customer_id = p.customer_id
+    GROUP BY concat(c.last_name, ' ', c.first_name);
+```
+
+![v2_noindex](img/Screenshot_2023-03-14_23-57-41.png)
+
+
+**Вариант 3 без индексов**
+
+```sql
+select concat(c.last_name, ' ', c.first_name), sum(p.amount)
+from payment p, customer c
+where date(p.payment_date) = '2005-07-30' 
+and p.customer_id = c.customer_id 
+group by concat(c.last_name, ' ', c.first_name);
+```
+
+![v3_noindex](img/Screenshot_2023-03-14_23-59-01.png)
+
+
+**Вариант 4 без индексов**
+
+```sql
+select  concat(c.last_name, ' ', c.first_name) full_name, sum(p.amount)
+from payment p, rental r, customer c, inventory i
+where date(p.payment_date) = '2005-07-30' 
+and p.payment_date = r.rental_date and r.customer_id = c.customer_id and i.inventory_id = r.inventory_id
+group by full_name
+```
+
+![v4_noindex](img/Screenshot_2023-03-15_00-01-44.png)
+
+### Добавлены индексы
+
+```sql
+CREATE INDEX full_name ON customer (last_name, first_name);
+
+CREATE INDEX payment_date ON payment (customer_id, payment_date);
+
+CREATE INDEX rental_date ON rental (rental_date);
+```
+
+**Вариант 1 c индексами**
+
+Из вновь созданных индексов в обработке запроса участвует только один индекс `full_name`, запрос обрабатывается немного быстрее.
+
+![v1_noindex](img/Screenshot_2023-03-15_00-09-37.png)
+
+
+**Вариант 2 c индексами**
+
+Вновь созданные индексы в обработке запроса не участвуют, результат такой же, как и без них
+
+![v2_noindex](img/Screenshot_2023-03-15_00-13-18.png)
+
+**Вариант 3 c индексами**
+
+Из вновь созданных индексов в обработке запроса участвует только один индекс `full_name`, запрос обрабатывается немного быстрее.
+
+![v3_noindex](img/Screenshot_2023-03-15_00-28-08.png)
+
+
+**Вариант 4 c индексами**
+
+Из вновь созданных индексов в обработке запроса участвует только один индекс `rental_date`, запрос обрабатывается значительно быстрее.
+
+![v4_noindex](img/Screenshot_2023-03-15_00-35-11.png)
+
+
+### Выводы:
+
+Быстрее всего из 4-х вариантов ответ на запрос будет получен с помощью варианта 1 при условии применения индексов и с помощью варианта 2 независимо от индексов.
 
 ---
 
