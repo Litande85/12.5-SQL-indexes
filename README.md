@@ -264,7 +264,7 @@ group by concat(c.last_name, ' ', c.first_name);
 
 Время обработки запроса уменьшилось в несколько раз по сравнению с ранее приведенными решениями
 
-!EXPLAIN ANALYZE](img/Screenshot_2023-03-18_16-54-10.png)
+![EXPLAIN ANALYZE](img/Screenshot_2023-03-18_16-54-10.png)
 
 
 ---
