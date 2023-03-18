@@ -3,6 +3,7 @@
 - [Ответ к Заданию 1](#1)
 - [Ответ к Заданию 2](#2)
 - [Ответ к Заданию 2 - после доработки](#2-1)
+- [Ответ к Заданию 2 - после второй доработки](#2-2)
 - [Ответ к Заданию 3* - отсутствует](#3)
 
 ---
@@ -225,6 +226,46 @@ CREATE INDEX rental_date ON rental (rental_date);
 ### Выводы:
 
 Быстрее всего из 4-х вариантов ответ на запрос будет получен с помощью варианта 4 при условии применения индексов и с помощью варианта 2 независимо от индексов.
+
+### *<a name = "2-2"> Ответ к Заданию 2 - после второй доработки</a>*
+
+
+Запрос доработки: Mysql не использует созданный вами индекс для payment_date, так как вы не переписали условие для него. К атрибуту payment_date применен оператор date, поэтому mysql ни в одном из ваших вариантов не использует индекс.
+Попробуйте переписать условие следующим образом: p.payment_date >= ‘2005-07-30’ and p.payment_date < DATE_ADD(‘2005-07-30’, INTERVAL 1 DAY) и посмотрите, будет ли использоваться тогда индекс.
+Приложите скрин explain analyze для одного из вариантов вашего запроса (который вам больше всего нравится!), где будет видно, что mysql использует созданный индекс.
+Также, в данном случае, лучше создать просто индекс CREATE INDEX payment_date ON payment (payment_date) без customer_id.
+Жду вашей доработки!
+Будут вопросы, пишите в дискорд Ксения Дикова#0524.
+
+Удалила все ранее созданные индексы.
+
+```sql
+DROP INDEX payment_date ON payment
+
+DROP INDEX full_name ON customer
+
+DROP INDEX rental_date ON rental
+```
+
+Создала индекс `CREATE INDEX payment_date ON payment (payment_date)`
+
+![SCHEMA.STATISTICS](img/Screenshot_2023-03-18_16-39-58.png)
+
+Переписала условие по предложенному варианту
+
+```sql
+EXPLAIN ANALYZE
+select concat(c.last_name, ' ', c.first_name), sum(p.amount)
+from payment p, customer c
+where p.payment_date >= "2005-07-30 00:00:00" and p.payment_date < DATE_ADD("2005-07-30 00:00:00", INTERVAL 1 DAY) 
+and p.customer_id = c.customer_id 
+group by concat(c.last_name, ' ', c.first_name);
+```
+
+Время обработки запроса уменьшилось в несколько раз по сравнению с ранее приведенными решениями
+
+!EXPLAIN ANALYZE](img/Screenshot_2023-03-18_16-54-10.png)
+
 
 ---
 
